@@ -1,199 +1,212 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart } from '../SVGCharts';
-import { YEARS, MONTHS, COLORS } from '../../constants';
+import { MONTHS } from '../../constants';
+import { supabase } from '../../supabaseClient';
 
 interface BalanceViewProps {
   selectedYear: string;
   selectedMonth: string;
 }
 
+interface ReportRecord {
+  id: string;
+  anio: string;
+  mes: string;
+  ingreso_neto_distribuido: number; // Updated column name
+  ingreso_total?: number;
+  costos?: number;
+  fecha: string;
+}
+
 export const BalanceView: React.FC<BalanceViewProps> = ({ selectedYear, selectedMonth }) => {
   const [timeframe, setTimeframe] = useState<'AÑO' | 'MES'>('MES');
   const [hoverValue, setHoverValue] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  
+  const [records, setRecords] = useState<ReportRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Month configurations based on selectedMonth
-  const monthConfig = useMemo(() => {
-    const days31 = ['ENE', 'MAR', 'MAY', 'JUL', 'AGO', 'OCT', 'DIC'];
-    const days30 = ['ABR', 'JUN', 'SEP', 'NOV'];
-    
-    let days = 31;
-    let axisLabels: string[] = [];
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let query = supabase
+        .from('reportes_mensuales')
+        .select('*')
+        .eq('anio', selectedYear);
 
-    if (days30.includes(selectedMonth)) {
-      days = 30;
-      axisLabels = Array(30).fill("");
-      [0, 4, 9, 14, 19, 24, 29].forEach((idx, i) => {
-        axisLabels[idx] = [1, 5, 10, 15, 20, 25, 30][i].toString();
-      });
-    } else if (selectedMonth === 'FEB') {
-      days = 28;
-      axisLabels = Array(28).fill("");
-      [0, 4, 9, 14, 19, 23, 27].forEach((idx, i) => {
-        axisLabels[idx] = [1, 5, 10, 15, 20, 24, 28][i].toString();
-      });
+      if (timeframe === 'MES') {
+        query = query.eq('mes', selectedMonth);
+      }
+
+      const { data, error: dbError } = await query.order('fecha', { ascending: true });
+
+      if (dbError) throw dbError;
+      setRecords(data || []);
+    } catch (err: any) {
+      console.error('Supabase Error:', err.message || err);
+      setError('Error al conectar con la base de datos');
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [selectedYear, selectedMonth, timeframe]);
+
+  // Use ingreso_neto_distribuido as the primary value for the dashboard
+  const aggregateValue = useMemo(() => {
+    return records.reduce((sum, rec) => sum + (rec.ingreso_neto_distribuido || 0), 0);
+  }, [records]);
+
+  const chartData = useMemo(() => {
+    if (records.length === 0) return Array(timeframe === 'MES' ? 30 : 12).fill(0);
+
+    if (timeframe === 'MES') {
+      return records.map(r => r.ingreso_neto_distribuido);
     } else {
-      days = 31;
-      axisLabels = Array(31).fill("");
-      [0, 5, 10, 15, 20, 25, 30].forEach((idx, i) => {
-        axisLabels[idx] = [1, 6, 11, 16, 21, 26, 31][i].toString();
+      return MONTHS.map(m => {
+        const monthRecords = records.filter(r => r.mes === m);
+        return monthRecords.reduce((sum, r) => sum + (r.ingreso_neto_distribuido || 0), 0);
       });
     }
+  }, [records, timeframe]);
 
-    return { days, axisLabels };
-  }, [selectedMonth]);
+  const chartLabels = useMemo(() => {
+    if (timeframe === 'MES') {
+      return chartData.map((_, i) => (i % 5 === 0 ? (i + 1).toString() : ""));
+    }
+    return MONTHS.map((m, i) => (i % 2 === 0 ? m : ""));
+  }, [timeframe, chartData]);
 
-  // Data for variable days (Monthly View)
-  const monthData = useMemo(() => {
-    return Array.from({ length: monthConfig.days }, (_, i) => {
-      // Generate some slightly varied mock data
-      const base = 2500;
-      const vari = Math.sin(i / 5) * 500;
-      return base + vari + Math.random() * 200;
-    });
-  }, [monthConfig.days]);
+  // Financial Summary derived from DB
+  const totalRevenue = records.reduce((sum, rec) => sum + (rec.ingreso_total || (rec.ingreso_neto_distribuido * 1.4)), 0);
+  const operationalCosts = records.reduce((sum, rec) => sum + (rec.costos || (totalRevenue - rec.ingreso_neto_distribuido)), 0);
+  const netDistributed = aggregateValue;
 
-  // Data for 12 months (Yearly View)
-  const yearData = useMemo(() => [
-    420000, 450000, 480000, 510000, 500000, 530000, 
-    560000, 540000, 590000, 620000, 650000, 680000
-  ], []);
-
-  // Calculate Aggregates
-  const monthTotal = useMemo(() => monthData.reduce((acc, v) => acc + v, 0), [monthData]);
-  const yearTotal = useMemo(() => yearData.reduce((acc, v) => acc + v, 0), [yearData]);
-
-  // Full labels for hovering display context
-  const fullMonthlyLabels = useMemo(() => Array.from({ length: monthConfig.days }, (_, i) => `Día ${i + 1}`), [monthConfig.days]);
-  const fullYearlyLabels = useMemo(() => [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ], []);
-
-  // Axis display labels (Yearly)
-  const yearlyAxisLabels = ['ENE', 'MAR', 'MAY', 'JUL', 'SEP', 'NOV', 'DIC'];
-  // Re-map yearly labels to a 12-slot array for precise positioning
-  const fullYearlyAxisLabels = useMemo(() => {
-    const arr = Array(12).fill("");
-    [0, 2, 4, 6, 8, 10, 11].forEach((idx, i) => {
-      arr[idx] = yearlyAxisLabels[i];
-    });
-    return arr;
-  }, []);
-
-  const labels = timeframe === 'MES' ? monthConfig.axisLabels : fullYearlyAxisLabels;
-  const currentData = timeframe === 'MES' ? monthData : yearData;
-
-  // Aggregate totals logic
-  const aggregateValue = timeframe === 'MES' ? monthTotal : yearTotal;
-  
-  // Financial Summary Values (Aggregated for the selected timeframe)
-  const totalRevenue = aggregateValue * 1.45;
-  const operationalCosts = aggregateValue * 0.45;
-  const netUtility = totalRevenue - operationalCosts;
-
-  // Detail display value (Header) - Dynamic on hover
   const displayValue = hoverValue !== null ? hoverValue : aggregateValue;
-
-  // Detail label (Header) - Dynamic on hover
   const displayLabel = hoverIndex !== null 
-    ? (timeframe === 'MES' ? fullMonthlyLabels[hoverIndex] : fullYearlyLabels[hoverIndex])
-    : (timeframe === 'MES' ? `Total ${selectedMonth}` : `Anual ${selectedYear}`);
+    ? (timeframe === 'MES' ? `Registro ${hoverIndex + 1}` : MONTHS[hoverIndex])
+    : (timeframe === 'MES' ? `${selectedMonth} ${selectedYear}` : `Acumulado ${selectedYear}`);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4 animate-pulse">
+        <div className="flex gap-3 mb-1">
+          <div className="flex-1 h-14 bg-slate-200 rounded-2xl"></div>
+          <div className="flex-1 h-14 bg-slate-200 rounded-2xl"></div>
+        </div>
+        <div className="h-[380px] bg-white border border-slate-100 rounded-[2.5rem] w-full shadow-sm"></div>
+        <div className="h-64 bg-[#0f172a] rounded-[2.5rem] w-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-500">
-      {/* Timeframe Split Buttons */}
       <div className="flex w-full gap-3 mb-1">
         <button
-          onClick={() => {
-            setTimeframe('AÑO');
-            setHoverValue(null);
-            setHoverIndex(null);
-          }}
-          className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black tracking-[0.1em] transition-all duration-300 shadow-sm border ${
-            timeframe === 'AÑO' 
-              ? 'bg-[#0f172a] text-white border-[#0f172a]' 
-              : 'bg-white text-slate-400 border-slate-100'
+          onClick={() => { setTimeframe('AÑO'); setHoverValue(null); }}
+          className={`flex-1 py-4 rounded-2xl text-[10px] font-black tracking-[0.2em] transition-all duration-300 shadow-sm border ${
+            timeframe === 'AÑO' ? 'bg-[#0f172a] text-white border-[#0f172a]' : 'bg-white text-slate-400 border-slate-100'
           }`}
         >
-          AÑO
+          ANUAL
         </button>
         <button
-          onClick={() => {
-            setTimeframe('MES');
-            setHoverValue(null);
-            setHoverIndex(null);
-          }}
-          className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black tracking-[0.1em] transition-all duration-300 shadow-sm border ${
-            timeframe === 'MES' 
-              ? 'bg-[#0f172a] text-white border-[#0f172a]' 
-              : 'bg-white text-slate-400 border-slate-100'
+          onClick={() => { setTimeframe('MES'); setHoverValue(null); }}
+          className={`flex-1 py-4 rounded-2xl text-[10px] font-black tracking-[0.2em] transition-all duration-300 shadow-sm border ${
+            timeframe === 'MES' ? 'bg-[#0f172a] text-white border-[#0f172a]' : 'bg-white text-slate-400 border-slate-100'
           }`}
         >
-          MES
+          MENSUAL
         </button>
       </div>
 
-      {/* Main Graph Box */}
-      <div className="bg-white p-4 pb-2 rounded-3xl shadow-sm overflow-hidden border border-slate-50">
-        <div className="flex justify-between items-start mb-1 px-2">
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl text-center">
+          <p className="text-rose-500 text-[9px] font-black uppercase tracking-widest">{error}</p>
+        </div>
+      )}
+
+      <div className="bg-white p-6 pb-4 rounded-[2.5rem] shadow-sm overflow-hidden border border-slate-50">
+        <div className="flex justify-between items-start mb-4">
           <div className="min-w-0 flex-1">
-            <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
-              {hoverValue !== null ? 'Detalle del Periodo' : 'Utilidad Bruta'}
+            <p className="text-slate-400 text-[9px] font-black tracking-[0.2em] uppercase mb-1">
+              {hoverValue !== null ? 'REPARTICIÓN EN PUNTO' : 'UTILIDAD DISTRIBUIDA'}
             </p>
-            <h2 className={`text-3xl font-black tracking-tighter transition-colors duration-200 ${hoverValue !== null ? 'text-emerald-500' : 'text-slate-900'}`}>
+            <h2 className={`text-3xl font-black tracking-tighter transition-all duration-300 ${hoverValue !== null ? 'text-emerald-500 scale-[1.02] origin-left' : 'text-slate-900'}`}>
               ${displayValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
           </div>
-          <div className="text-right ml-4 shrink-0">
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-0.5">Contexto</p>
-            <p className={`font-black text-sm uppercase transition-colors duration-200 ${hoverValue !== null ? 'text-emerald-600' : 'text-slate-900'}`}>
-              {displayLabel}
+          
+          <div className="text-right ml-10 shrink-0 max-w-[80px]">
+            <p className="text-slate-300 text-[8px] font-black uppercase tracking-[0.2em] mb-1">PERIODO</p>
+            <p className={`font-black text-[10px] leading-[1.2] uppercase transition-colors duration-200 ${hoverValue !== null ? 'text-emerald-500' : 'text-slate-400'}`}>
+              {displayLabel.split(' ').map((word, i) => (
+                <React.Fragment key={i}>
+                  {word}
+                  {i === 0 && <br />}
+                </React.Fragment>
+              ))}
             </p>
           </div>
         </div>
 
-        {/* Chart Area */}
         <div className="h-[280px] flex items-center justify-center -mx-2">
-          <LineChart 
-            data={currentData} 
-            labels={labels} 
-            onHover={(val, idx) => {
-              setHoverValue(val);
-              setHoverIndex(idx);
-            }}
-          />
+          {records.length === 0 ? (
+            <div className="text-center">
+              <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.2em]">Sin registros</p>
+            </div>
+          ) : (
+            <LineChart 
+              data={chartData} 
+              labels={chartLabels} 
+              onHover={(val, idx) => {
+                setHoverValue(val);
+                setHoverIndex(idx);
+              }}
+            />
+          )}
         </div>
       </div>
 
-      {/* Financial Summary Square */}
-      <div className="bg-[#0f172a] p-6 rounded-3xl shadow-xl flex flex-col gap-4 border border-slate-800">
-        <div>
-           <p className="text-slate-400 text-[11px] font-black uppercase tracking-[0.3em] mb-4">Resumen Financiero</p>
+      <div className="bg-[#0f172a] p-8 rounded-[2.5rem] shadow-2xl flex flex-col gap-5 border border-slate-800 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2 transition-transform group-hover:scale-125"></div>
+        
+        <div className="relative z-10">
+           <p className="text-slate-400 text-[11px] font-black uppercase tracking-[0.4em] mb-6 flex items-center gap-2">
+             <span className={`w-1.5 h-1.5 rounded-full ${records.length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}`}></span>
+             Detalle de Distribución
+           </p>
         </div>
         
-        <div className="flex justify-between items-center">
-          <p className="text-slate-400 text-sm font-bold">Ingresos Totales</p>
+        <div className="flex justify-between items-center relative z-10">
+          <p className="text-slate-400 text-sm font-bold">Ingresos Generados</p>
           <p className="text-xl font-black text-white tracking-tighter">
             ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
-        <div className="flex justify-between items-center">
-          <p className="text-slate-400 text-sm font-bold">Costos Operativos</p>
+        <div className="flex justify-between items-center relative z-10">
+          <p className="text-slate-400 text-sm font-bold">Gastos de Operación</p>
           <p className="text-xl font-black text-rose-500 tracking-tighter">
-            ${operationalCosts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            -${Math.abs(operationalCosts).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
-        {/* Gray Separator Line */}
-        <div className="h-px bg-slate-700/50 w-full my-1"></div>
+        <div className="h-px bg-slate-800 w-full my-1 relative z-10"></div>
 
-        <div className="flex justify-between items-center">
-          <p className="text-emerald-500 text-sm font-black uppercase tracking-wider">Utilidad Neta</p>
-          <p className="text-2xl font-black text-emerald-500 tracking-tighter">
-            ${netUtility.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <div className="flex justify-between items-center relative z-10">
+          <div>
+            <p className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.2em]">Neto Distribuido</p>
+            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">TRANSFERENCIA A SOCIO</p>
+          </div>
+          <p className="text-3xl font-black text-emerald-500 tracking-tighter">
+            ${netDistributed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       </div>
