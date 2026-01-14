@@ -1,5 +1,5 @@
 import React from 'react';
-import { Balance } from './components/Views/Balance';
+import { Balance } from './Views/Balance';
 
 function App() {
   return (
