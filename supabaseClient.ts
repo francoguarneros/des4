@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Sustituye con tus llaves reales de Supabase (Project Settings > API)
-const supabaseUrl = 'https://TU_URL_AQUÍ.supabase.co';
-const supabaseAnonKey = 'TU_ANON_KEY_AQUÍ';
+// BORRA LO QUE HAY Y PEGA TUS DATOS REALES ENTRE LAS COMILLAS
+const supabaseUrl = 'https://pegatuurlreal.supabase.co'; 
+const supabaseAnonKey = 'pega-tu-clave-anon-larga-aqui';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
