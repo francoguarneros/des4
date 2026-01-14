@@ -1,3 +1,4 @@
+import { Fiscal } from './Views/Fiscal';
 import React, { useState } from 'react';
 // IMPORTANTE: Si App.tsx está dentro de la carpeta 'components', esta ruta funciona:
 import { Balance } from './Views/Balance'; 
