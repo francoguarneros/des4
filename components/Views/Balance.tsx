@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient.ts// Importamos el cable que acabas de crear
-
+import { supabase } from '../../supabaseClient.ts'; // Importamos el cable que acabas de crear
 export const Balance = () => {
   // Estados para guardar la información de la base de datos
   const [utilidad, setUtilidad] = useState(0);
