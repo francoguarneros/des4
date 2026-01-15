@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-// Importamos las vistas reales
+// IMPORTANTE: Aquí conectamos tus archivos REALES
 import { Balance } from './Views/Balance';
-import { Fiscal } from './Views/Fiscal'; // <--- Aquí conectamos tu archivo real
+import { Fiscal } from './Views/Fiscal'; 
 
-// Placeholder para Buscar (lo haremos después)
+// Este sigue siendo falso porque aún no creamos el archivo Buscar.tsx
+// Mañana haremos este real.
 const Buscar = () => (
   <div className="p-8 bg-white rounded shadow">
     <h2 className="text-2xl font-bold text-gray-800 mb-4">Buscador de Propiedades</h2>
@@ -16,7 +17,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen bg-gray-100 font-sans">
-      {/* SIDEBAR */}
+      {/* BARRA LATERAL (SIDEBAR) */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col">
         <div className="p-6 text-xl font-bold border-b border-slate-700">
           Inversionista<span className="text-blue-400">Pro</span>
@@ -56,18 +57,20 @@ function App() {
         </div>
       </aside>
 
-      {/* CONTENIDO PRINCIPAL */}
+      {/* ÁREA PRINCIPAL */}
       <main className="flex-1 p-8 overflow-y-auto">
         <header className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 capitalize">
             {activeTab === 'balance' ? 'Dashboard Financiero' : 
-             activeTab === 'fiscal' ? 'Situación Fiscal' : 'Buscar Propiedades'}
+             activeTab === 'fiscal' ? 'Situación Fiscal' : 'Buscador'}
           </h1>
+          {/* Botón decorativo */}
           <button className="px-4 py-2 bg-white border rounded shadow-sm hover:bg-gray-50 text-sm">
             Descargar Reporte
           </button>
         </header>
 
+        {/* CONTENEDOR DE VISTAS */}
         <div className="transition-opacity duration-300">
           {activeTab === 'balance' && <Balance />}
           {activeTab === 'fiscal' && <Fiscal />}
