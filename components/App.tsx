@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-// 1. IMPORTAMOS LAS VISTAS REALES (Los archivos que ya creaste)
+// 1. IMPORTAMOS LAS VISTAS REALES
 import { Balance } from './Views/Balance';
-import { Fiscal } from './Views/Fiscal'; 
+// CORRECCIÓN: Tu archivo exporta "FiscalView", no "Fiscal"
+import { FiscalView } from './Views/Fiscal'; 
 
-// 2. COMPONENTE DE RELLENO (Solo para Buscar, porque ese archivo aún no existe)
+// Componente temporal para Buscar
 const Buscar = () => (
   <div className="p-8 bg-white rounded shadow">
     <h2 className="text-2xl font-bold text-gray-800 mb-4">Buscador de Propiedades</h2>
@@ -16,7 +17,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen bg-gray-100 font-sans">
-      {/* SIDEBAR (Menú Izquierdo) */}
+      {/* SIDEBAR */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col">
         <div className="p-6 text-xl font-bold border-b border-slate-700">
           Inversionista<span className="text-blue-400">Pro</span>
@@ -71,7 +72,12 @@ function App() {
         {/* CONTENEDOR DE VISTAS */}
         <div className="transition-opacity duration-300">
           {activeTab === 'balance' && <Balance />}
-          {activeTab === 'fiscal' && <Fiscal />}
+          
+          {/* CORRECCIÓN: Usamos el nombre real y le pasamos los datos obligatorios */}
+          {activeTab === 'fiscal' && (
+            <FiscalView selectedYear="2024" selectedQuarter="Q1" />
+          )}
+          
           {activeTab === 'buscar' && <Buscar />}
         </div>
       </main>
