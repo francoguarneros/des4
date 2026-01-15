@@ -1,16 +1,9 @@
-import { Fiscal } from './Views/Fiscal';
 import React, { useState } from 'react';
-// IMPORTANTE: Si App.tsx está dentro de la carpeta 'components', esta ruta funciona:
-import { Balance } from './Views/Balance'; 
+// Importamos las vistas reales
+import { Balance } from './Views/Balance';
+import { Fiscal } from './Views/Fiscal'; // <--- Aquí conectamos tu archivo real
 
-// --- Componentes Temporales (Para que el menú funcione YA) ---
-const Fiscal = () => (
-  <div className="p-8 bg-white rounded shadow">
-    <h2 className="text-2xl font-bold text-gray-800 mb-4">Reporte Fiscal</h2>
-    <p className="text-gray-600">Aquí verás las retenciones de impuestos y facturas.</p>
-  </div>
-);
-
+// Placeholder para Buscar (lo haremos después)
 const Buscar = () => (
   <div className="p-8 bg-white rounded shadow">
     <h2 className="text-2xl font-bold text-gray-800 mb-4">Buscador de Propiedades</h2>
@@ -18,14 +11,12 @@ const Buscar = () => (
   </div>
 );
 
-// --- La Aplicación Principal ---
 function App() {
-  // Estado para controlar qué pestaña se ve (Por defecto: balance)
   const [activeTab, setActiveTab] = useState('balance');
 
   return (
     <div className="flex min-h-screen bg-gray-100 font-sans">
-      {/* 1. SIDEBAR (Menú Izquierdo) */}
+      {/* SIDEBAR */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col">
         <div className="p-6 text-xl font-bold border-b border-slate-700">
           Inversionista<span className="text-blue-400">Pro</span>
@@ -65,18 +56,18 @@ function App() {
         </div>
       </aside>
 
-      {/* 2. AREA PRINCIPAL (Donde cambia la información) */}
+      {/* CONTENIDO PRINCIPAL */}
       <main className="flex-1 p-8 overflow-y-auto">
         <header className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 capitalize">
-            {activeTab === 'balance' ? 'Dashboard Financiero' : activeTab}
+            {activeTab === 'balance' ? 'Dashboard Financiero' : 
+             activeTab === 'fiscal' ? 'Situación Fiscal' : 'Buscar Propiedades'}
           </h1>
           <button className="px-4 py-2 bg-white border rounded shadow-sm hover:bg-gray-50 text-sm">
             Descargar Reporte
           </button>
         </header>
 
-        {/* Aquí es donde ocurre la magia del cambio de vista */}
         <div className="transition-opacity duration-300">
           {activeTab === 'balance' && <Balance />}
           {activeTab === 'fiscal' && <Fiscal />}
