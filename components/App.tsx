@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-// 1. IMPORTAMOS LAS VISTAS REALES
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { Balance } from './Views/Balance';
-// CORRECCIÓN: Tu archivo exporta "FiscalView", no "Fiscal"
-import { FiscalView } from './Views/Fiscal'; 
+import { FiscalView } from './Views/Fiscal';
+import { Login } from './Login'; // Importamos la nueva puerta
 
-// Componente temporal para Buscar
+// Componente temporal Buscar
 const Buscar = () => (
   <div className="p-8 bg-white rounded shadow">
     <h2 className="text-2xl font-bold text-gray-800 mb-4">Buscador de Propiedades</h2>
@@ -13,8 +13,40 @@ const Buscar = () => (
 );
 
 function App() {
+  const [session, setSession] = useState(null);
   const [activeTab, setActiveTab] = useState('balance');
+  const [loading, setLoading] = useState(true);
 
+  // Al cargar, verificamos si ya existe una sesión guardada
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+  }
+
+  // SI NO HAY SESIÓN, MOSTRAMOS EL LOGIN
+  if (!session) {
+    return <Login onLogin={() => {}} />;
+  }
+
+  // SI HAY SESIÓN, MOSTRAMOS EL DASHBOARD COMPLETO
   return (
     <div className="flex min-h-screen bg-gray-100 font-sans">
       {/* SIDEBAR */}
@@ -47,13 +79,12 @@ function App() {
         </nav>
 
         <div className="p-4 border-t border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">S</div>
-            <div>
-              <p className="text-sm font-medium">Socio Inversionista</p>
-              <p className="text-xs text-gray-400">Ver Perfil</p>
+          <button onClick={handleLogout} className="flex items-center gap-3 w-full hover:bg-slate-800 p-2 rounded transition-colors">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-sm">S</div>
+            <div className="text-left">
+              <p className="text-sm font-medium">Cerrar Sesión</p>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -69,15 +100,9 @@ function App() {
           </button>
         </header>
 
-        {/* CONTENEDOR DE VISTAS */}
         <div className="transition-opacity duration-300">
           {activeTab === 'balance' && <Balance />}
-          
-          {/* CORRECCIÓN: Usamos el nombre real y le pasamos los datos obligatorios */}
-          {activeTab === 'fiscal' && (
-            <FiscalView selectedYear="2024" selectedQuarter="Q1" />
-          )}
-          
+          {activeTab === 'fiscal' && <FiscalView selectedYear="2024" selectedQuarter="Q1" />}
           {activeTab === 'buscar' && <Buscar />}
         </div>
       </main>
