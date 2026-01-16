@@ -1,41 +1,35 @@
-import React, { useState } from 'react';
-// La ruta '../' significa "sube un nivel" (de components a src) para buscar el archivo.
-import { supabase } from '../supabaseClient'; 
+import { useState } from 'react'
+import { supabase } from '../supabaseClient'
 
-interface LoginProps {
-  onLogin: () => void;
-}
-
-export default function Login({ onLogin }: LoginProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function Login({ onLogin }: { onLogin: () => void }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      });
+      })
 
-      if (authError) {
-        // Mostramos el mensaje técnico para depurar
-        setError(authError.message);
+      if (error) {
+        setError(error.message) // Aquí veremos el error en inglés si falla
       } else {
-        onLogin();
+        onLogin()
       }
     } catch (err) {
-      setError('Error inesperado de conexión.');
-      console.error(err);
+      setError('Error inesperado de conexión')
+      console.error(err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -44,7 +38,7 @@ export default function Login({ onLogin }: LoginProps) {
         
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm border border-red-400">
-            Error: {error}
+            {error}
           </div>
         )}
 
@@ -74,10 +68,10 @@ export default function Login({ onLogin }: LoginProps) {
             disabled={loading}
             className="w-full py-2 font-bold text-white bg-blue-600 rounded hover:bg-blue-700 transition disabled:bg-blue-300"
           >
-            {loading ? 'Verificando...' : 'ENTRAR AL SISTEMA'}
+            {loading ? 'Verificando...' : 'PRUEBA FINAL (ENTRAR)'}
           </button>
         </form>
       </div>
     </div>
-  );
+  )
 }
