@@ -21,9 +21,10 @@ export const Login = ({ onLogin }: LoginProps) => {
       password,
     });
 
-    if (error) {
-      setError('Credenciales incorrectas. Intenta de nuevo.');
-      setLoading(false);
+   if (error) {
+  setError(error.message); // <--- PON ESTO: Nos mostrará el error real
+  setLoading(false);
+}
     } else {
       // Si el login es exitoso, avisamos a App.tsx
       onLogin();
