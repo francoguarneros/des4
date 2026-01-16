@@ -1,36 +1,34 @@
-import { useState } from 'react'
-// FÍJATE AQUÍ: Usamos './' porque ahora son vecinos de carpeta.
-import { supabase } from './supabaseClient'
+import { useState } from 'react';
+import { supabase } from '../client'; // <--- Nota que ahora buscamos '../client'
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
 
       if (error) {
-        setError(error.message)
+        setError(error.message);
       } else {
-        onLogin()
+        onLogin();
       }
     } catch (err) {
-      setError('Error de conexión')
-      console.error(err)
+      setError('Error inesperado');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -44,35 +42,31 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-600">Correo</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-600">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 border rounded"
+            placeholder="Email"
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2 border rounded"
+            placeholder="Contraseña"
+            required
+          />
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 font-bold text-white bg-blue-600 rounded hover:bg-blue-700 transition disabled:bg-blue-300"
+            className="w-full py-2 font-bold text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-gray-400"
           >
-            {loading ? 'Validando...' : 'ENTRAR AL SISTEMA'}
+            {loading ? 'Cargando...' : 'ENTRAR'}
           </button>
         </form>
       </div>
     </div>
-  )
+  );
 }
