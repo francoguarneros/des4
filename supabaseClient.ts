@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// BORRA LO QUE HAY Y PEGA TUS DATOS REALES ENTRE LAS COMILLAS
-const supabaseUrl = 'https://pegatuurlreal.supabase.co'; 
-const supabaseAnonKey = 'pega-tu-clave-anon-larga-aqui';
+// Estas líneas leen las llaves que pusimos en Vercel
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Aquí "exportamos" la variable supabase para que Login la pueda usar
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
