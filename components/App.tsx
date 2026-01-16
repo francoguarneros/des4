@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './client'; // <--- ESTA ES LA CORRECCIÓN CLAVE
+import { supabase } from './client'; // 
 import Login from './components/Login';
-// Importa aquí tus otros componentes (Dashboard, etc) si los tienes.
-// Si no tienes Dashboard.tsx aún, comentaré esa parte para que no falle.
 
 function App() {
   const [session, setSession] = useState<any>(null);
