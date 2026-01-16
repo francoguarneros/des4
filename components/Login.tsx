@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
+// La ruta '../' significa "sube un nivel" (de components a src) para buscar el archivo.
+import { supabase } from '../supabaseClient'; 
 
 interface LoginProps {
   onLogin: () => void;
@@ -16,18 +17,23 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      // AQUÍ ESTABA EL CAMBIO: Mostramos el error real en inglés
-      setError(error.message);
+      if (authError) {
+        // Mostramos el mensaje técnico para depurar
+        setError(authError.message);
+      } else {
+        onLogin();
+      }
+    } catch (err) {
+      setError('Error inesperado de conexión.');
+      console.error(err);
+    } finally {
       setLoading(false);
-    } else {
-      // Si todo sale bien, entramos
-      onLogin();
     }
   };
 
@@ -38,19 +44,18 @@ export default function Login({ onLogin }: LoginProps) {
         
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm border border-red-400">
-            {error}
+            Error: {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-600">Correo Electrónico</label>
+            <label className="block mb-1 text-sm font-medium text-gray-600">Correo</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="tu@email.com"
               required
             />
           </div>
@@ -61,7 +66,6 @@ export default function Login({ onLogin }: LoginProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
               required
             />
           </div>
@@ -70,7 +74,7 @@ export default function Login({ onLogin }: LoginProps) {
             disabled={loading}
             className="w-full py-2 font-bold text-white bg-blue-600 rounded hover:bg-blue-700 transition disabled:bg-blue-300"
           >
-            {loading ? 'Cargando...' : 'PRUEBA DE FUEGO (ENTRAR)'}
+            {loading ? 'Verificando...' : 'ENTRAR AL SISTEMA'}
           </button>
         </form>
       </div>
