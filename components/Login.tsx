@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { supabase } from '../supabaseClient'
+// FÍJATE AQUÍ: Usamos './' porque ahora son vecinos de carpeta.
+import { supabase } from './supabaseClient'
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('')
@@ -19,12 +20,12 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
       })
 
       if (error) {
-        setError(error.message) // Aquí veremos el error en inglés si falla
+        setError(error.message)
       } else {
         onLogin()
       }
     } catch (err) {
-      setError('Error inesperado de conexión')
+      setError('Error de conexión')
       console.error(err)
     } finally {
       setLoading(false)
@@ -68,7 +69,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
             disabled={loading}
             className="w-full py-2 font-bold text-white bg-blue-600 rounded hover:bg-blue-700 transition disabled:bg-blue-300"
           >
-            {loading ? 'Verificando...' : 'PRUEBA FINAL (ENTRAR)'}
+            {loading ? 'Validando...' : 'ENTRAR AL SISTEMA'}
           </button>
         </form>
       </div>
