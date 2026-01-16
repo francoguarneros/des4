@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Estas líneas leen las llaves que pusimos en Vercel
+// Verificamos que las variables existan para evitar errores silenciosos
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Aquí "exportamos" la variable supabase para que Login la pueda usar
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Faltan las variables de entorno de Supabase en Vercel.');
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
